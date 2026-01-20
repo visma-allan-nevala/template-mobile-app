@@ -43,6 +43,7 @@ module.exports = {
     'babel.config.js',
     'metro.config.js',
     'jest.config.js',
+    'expo-env.d.ts',
   ],
   env: {
     browser: true,
