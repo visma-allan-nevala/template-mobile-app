@@ -8,11 +8,16 @@
  *   import { vismaConnect, tokenManager } from '@services/auth';
  *   import { analytics, crashReporting } from '@services/analytics';
  *   import { pushNotifications, notificationHandler } from '@services/notifications';
+ *   import { initializeApp, onUserLogin, onUserLogout } from '@services/app-initialization';
  */
 
 // Existing services
 export { authService } from './auth.service';
 export { userService } from './user.service';
+
+// App initialization
+export { initializeApp, onUserLogin, onUserLogout } from './app-initialization';
+export type { InitializationResult } from './app-initialization';
 
 // Auth services (Visma Connect)
 export {

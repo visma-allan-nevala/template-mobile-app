@@ -46,6 +46,7 @@ export const API_ENDPOINTS = {
   USER: {
     PROFILE: '/user/profile',
     UPDATE: '/user/update',
+    PUSH_TOKEN: '/user/push-token',
   },
 } as const;
 

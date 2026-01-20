@@ -32,6 +32,7 @@ import { useAuthStore } from '@store/auth.store';
 import { authApi } from '@api/endpoints/auth';
 import { tokenManager } from '@services/auth/token-manager';
 import { vismaConnect, VismaConnectError, decodeIdToken } from '@services/auth/visma-connect';
+import { onUserLogin, onUserLogout } from '@services/app-initialization';
 import { authConfig } from '@core/auth.config';
 import { secureStorage } from '@utils/secure-storage';
 import { STORAGE_KEYS } from '@core/constants';
@@ -153,6 +154,9 @@ export function useVismaConnect(): UseVismaConnectReturn {
 
       // Store tokens and update auth state
       await authStore.login(user, response.accessToken, response.refreshToken, expiresAt);
+
+      // Set up user-specific services (analytics, crash reporting, push token)
+      await onUserLogin(user.id, user.email);
 
       if (isDev) {
         console.log('[useVismaConnect] Auth completed successfully');
@@ -338,6 +342,9 @@ export function useVismaConnect(): UseVismaConnectReturn {
 
       // Clear auth store
       await authStore.logout();
+
+      // Clean up user-specific services (analytics, crash reporting)
+      await onUserLogout();
 
       if (isDev) {
         console.log('[useVismaConnect] Logout completed');
