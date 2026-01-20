@@ -31,7 +31,6 @@ export default function RootLayout() {
         // - Load fonts
         // - Fetch initial data
         // - Check auth state
-
         // Example font loading:
         // await Font.loadAsync({
         //   'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),

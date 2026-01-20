@@ -25,6 +25,7 @@ interface ButtonProps {
   fullWidth?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  testID?: string;
 }
 
 export function Button({
@@ -37,6 +38,7 @@ export function Button({
   fullWidth = false,
   style,
   textStyle,
+  testID,
 }: ButtonProps) {
   const isDisabled = disabled || loading;
 
@@ -62,6 +64,7 @@ export function Button({
       style={({ pressed }) => [buttonStyles, pressed && !isDisabled && styles.pressed]}
       onPress={onPress}
       disabled={isDisabled}
+      testID={testID}
     >
       {loading ? (
         <ActivityIndicator

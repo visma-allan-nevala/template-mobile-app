@@ -31,13 +31,7 @@ interface InputProps extends Omit<TextInputProps, 'style'> {
   disabled?: boolean;
 }
 
-export function Input({
-  label,
-  error,
-  helperText,
-  disabled = false,
-  ...inputProps
-}: InputProps) {
+export function Input({ label, error, helperText, disabled = false, ...inputProps }: InputProps) {
   const hasError = !!error;
 
   return (
@@ -48,11 +42,7 @@ export function Input({
         </Text>
       )}
       <TextInput
-        style={[
-          styles.input,
-          hasError && styles.inputError,
-          disabled && styles.inputDisabled,
-        ]}
+        style={[styles.input, hasError && styles.inputError, disabled && styles.inputDisabled]}
         placeholderTextColor={colors.gray[400]}
         editable={!disabled}
         {...inputProps}

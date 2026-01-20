@@ -16,7 +16,7 @@ import { Text } from '@/components/ui/Text';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/store/auth.store';
-import { colors, spacing, borderRadius } from '@/core/theme';
+import { colors, spacing } from '@/core/theme';
 import { formatDate } from '@/utils/formatting';
 
 export default function ProfileScreen() {
@@ -58,9 +58,7 @@ export default function ProfileScreen() {
             <Text variant="label" color="secondary">
               Member Since
             </Text>
-            <Text variant="body">
-              {user?.createdAt ? formatDate(user.createdAt) : 'N/A'}
-            </Text>
+            <Text variant="body">{user?.createdAt ? formatDate(user.createdAt) : 'N/A'}</Text>
           </View>
         </Card>
 

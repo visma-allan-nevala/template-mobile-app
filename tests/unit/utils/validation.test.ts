@@ -127,7 +127,7 @@ describe('validateRequired', () => {
   });
 
   it('returns missing field names', () => {
-    const data = { name: 'John', email: '' };
+    const data: Record<string, string | undefined> = { name: 'John', email: '' };
     const errors = validateRequired(data, ['name', 'email', 'phone']);
     expect(errors).toContain('email');
     expect(errors).toContain('phone');

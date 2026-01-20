@@ -49,7 +49,10 @@ export function useApi<T, P extends unknown[]>(
         const error: AppError =
           err instanceof ApiError
             ? { code: err.code, message: err.message, details: err.details }
-            : { code: 'UNKNOWN_ERROR', message: err instanceof Error ? err.message : 'Unknown error' };
+            : {
+                code: 'UNKNOWN_ERROR',
+                message: err instanceof Error ? err.message : 'Unknown error',
+              };
 
         setState({ data: null, isLoading: false, error });
         return null;

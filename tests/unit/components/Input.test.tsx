@@ -23,14 +23,12 @@ describe('Input', () => {
   });
 
   it('displays error message', () => {
-    const { getByText } = render(
-      <Input placeholder="Email" error="Email is required" />
-    );
+    const { getByText } = render(<Input placeholder="Email" error="Email is required" />);
     expect(getByText('Email is required')).toBeTruthy();
   });
 
   it('displays helper text when no error', () => {
-    const { getByText, queryByText } = render(
+    const { getByText } = render(
       <Input placeholder="Password" helperText="At least 8 characters" />
     );
     expect(getByText('At least 8 characters')).toBeTruthy();

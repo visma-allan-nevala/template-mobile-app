@@ -33,19 +33,11 @@ export function Card({
   onPress,
   style,
 }: CardProps) {
-  const cardStyles = [
-    styles.base,
-    styles[variant],
-    styles[`padding_${padding}`],
-    style,
-  ];
+  const cardStyles = [styles.base, styles[variant], styles[`padding_${padding}`], style];
 
   if (onPress) {
     return (
-      <Pressable
-        style={({ pressed }) => [cardStyles, pressed && styles.pressed]}
-        onPress={onPress}
-      >
+      <Pressable style={({ pressed }) => [cardStyles, pressed && styles.pressed]} onPress={onPress}>
         {children}
       </Pressable>
     );

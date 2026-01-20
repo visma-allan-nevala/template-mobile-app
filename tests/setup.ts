@@ -5,7 +5,7 @@
  * This file runs before each test file.
  */
 
-import '@testing-library/jest-native/extend-expect';
+import '@testing-library/react-native/extend-expect';
 
 // Mock expo-secure-store
 jest.mock('expo-secure-store', () => ({
@@ -58,23 +58,17 @@ jest.mock('expo-router', () => ({
 }));
 
 // Mock react-native-safe-area-context
-jest.mock('react-native-safe-area-context', () => {
-  const React = require('react');
-  return {
-    SafeAreaProvider: ({ children }: { children: React.ReactNode }) => children,
-    SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
-    useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
-  };
-});
+jest.mock('react-native-safe-area-context', () => ({
+  SafeAreaProvider: ({ children }: { children: unknown }) => children,
+  SafeAreaView: ({ children }: { children: unknown }) => children,
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
 
 // Silence console warnings during tests
 const originalWarn = console.warn;
 beforeAll(() => {
   console.warn = (...args) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('Animated: `useNativeDriver`')
-    ) {
+    if (typeof args[0] === 'string' && args[0].includes('Animated: `useNativeDriver`')) {
       return;
     }
     originalWarn.call(console, ...args);

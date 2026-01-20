@@ -1,7 +1,6 @@
 module.exports = {
   root: true,
   extends: [
-    'expo',
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
     'plugin:react/recommended',
@@ -28,6 +27,7 @@ module.exports = {
     ],
     '@typescript-eslint/no-explicit-any': 'warn',
     'no-console': ['warn', { allow: ['warn', 'error'] }],
+    '@typescript-eslint/no-require-imports': 'off',
   },
   settings: {
     react: {
@@ -40,5 +40,14 @@ module.exports = {
     'dist/',
     'web-build/',
     'coverage/',
+    'babel.config.js',
+    'metro.config.js',
+    'jest.config.js',
   ],
+  env: {
+    browser: true,
+    node: true,
+    es2021: true,
+    jest: true,
+  },
 };

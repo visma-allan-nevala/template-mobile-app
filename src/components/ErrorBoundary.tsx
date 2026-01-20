@@ -22,7 +22,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { colors, spacing } from '@core/theme';
-import { config, isDev } from '@core/config';
+import { isDev } from '@core/config';
 import { Button } from './ui/Button';
 import { Text } from './ui/Text';
 
