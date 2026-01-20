@@ -39,6 +39,9 @@ export const API_ENDPOINTS = {
     REGISTER: '/auth/register',
     LOGOUT: '/auth/logout',
     REFRESH: '/auth/refresh',
+    // OAuth endpoints for mobile apps
+    OAUTH_LOGIN: '/auth/oauth/login',
+    OAUTH_EXCHANGE: '/auth/oauth/exchange',
   },
   USER: {
     PROFILE: '/user/profile',

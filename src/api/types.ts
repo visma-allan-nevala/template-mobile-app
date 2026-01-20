@@ -69,6 +69,30 @@ export interface UserProfileResponse {
   updatedAt: string;
 }
 
+// OAuth API types (for Visma Connect and other OAuth providers)
+export interface OAuthTokenLoginRequest {
+  /** OAuth provider name (e.g., 'visma_connect') */
+  provider: string;
+  /** Access token from the OAuth provider */
+  accessToken: string;
+  /** Optional ID token for providers that issue them */
+  idToken?: string;
+}
+
+export interface OAuthCodeExchangeRequest {
+  /** OAuth provider name (e.g., 'visma_connect') */
+  provider: string;
+  /** Authorization code from OAuth callback */
+  code: string;
+  /** PKCE code verifier used during authorization */
+  codeVerifier: string;
+  /** Redirect URI used during authorization */
+  redirectUri: string;
+}
+
+/** Response from OAuth login - same structure as regular login */
+export type OAuthLoginResponse = LoginResponse;
+
 // Generic error response
 export interface ApiErrorResponse {
   error: {
