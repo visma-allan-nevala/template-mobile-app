@@ -1,93 +1,47 @@
-# Push Notifications Setup Guide
-
-This guide explains how to configure push notifications for your mobile app using `expo-notifications`.
-
-## Overview
-
-The template includes a complete push notification infrastructure:
-- Permission handling
-- Push token management
-- Foreground/background notification handling
-- Local notification scheduling
-- Deep link navigation from notifications
+# Push Notifications
 
 ## Prerequisites
 
-1. **EAS Build**: Push notifications require a development build (not Expo Go)
-2. **Firebase Project**: Required for Android FCM
-3. **Apple Developer Account**: Required for iOS APNs
+| Requirement | Purpose |
+|-------------|---------|
+| EAS Build (dev client) | Expo Go doesn't support push |
+| Firebase project | Android FCM |
+| Apple Developer account | iOS APNs |
 
-## Setup Steps
+## Setup
 
-### 1. Firebase Configuration (Android)
+### Android (Firebase)
 
-1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com)
-2. Add an Android app with your package name
-3. Download `google-services.json`
-4. Place it in your project root
+1. Create project at [Firebase Console](https://console.firebase.google.com)
+2. Add Android app with your package name
+3. Download `google-services.json` → project root
 
-```bash
-# Project structure
-template-mobile-app/
-├── google-services.json  # Add here
-├── app.config.ts
-└── ...
-```
+### iOS (APNs)
 
-### 2. Apple Push Notification Service (iOS)
+1. Create APNs key at [Apple Developer Portal](https://developer.apple.com)
+2. Upload to Expo: `eas credentials`
 
-1. Create an APNs key in [Apple Developer Portal](https://developer.apple.com)
-2. Upload the key to Expo: `eas credentials`
-3. Or configure in EAS dashboard
-
-### 3. Configure app.config.ts
-
-The template already includes notification plugin configuration:
+### app.config.ts (already configured)
 
 ```typescript
 plugins: [
-  [
-    'expo-notifications',
-    {
-      icon: './assets/images/notification-icon.png',
-      color: '#ffffff',
-      sounds: [],
-    },
-  ],
+  ['expo-notifications', {
+    icon: './assets/images/notification-icon.png',
+    color: '#ffffff',
+  }],
 ],
 ```
 
-### 4. Create Notification Icon (Android)
-
-Create a notification icon for Android:
-- Size: 96x96 pixels
-- Format: PNG with transparency
-- Color: White only (system tints it)
-- Location: `assets/images/notification-icon.png`
-
 ## Usage
 
-### Initialize Notifications
+### Initialize (app/_layout.tsx)
 
 ```typescript
-// app/_layout.tsx
-import { useEffect } from 'react';
-import { notificationHandler, pushNotifications } from '@services/notifications';
+import { initializeApp } from '@services/app-initialization';
 
-export default function RootLayout() {
-  useEffect(() => {
-    // Register notification handlers
-    notificationHandler.registerHandlers();
-
-    // Handle notification that opened the app
-    notificationHandler.handleInitialNotification();
-
-    // Request permissions (optional - can defer to user action)
-    // pushNotifications.requestPermissions();
-  }, []);
-
-  return <Slot />;
-}
+useEffect(() => {
+  initializeApp(); // Handles notification setup
+}, []);
 ```
 
 ### Request Permissions
@@ -95,170 +49,94 @@ export default function RootLayout() {
 ```typescript
 import { pushNotifications } from '@services/notifications';
 
-async function requestNotificationPermission() {
-  const status = await pushNotifications.requestPermissions();
-
-  if (status === 'granted') {
-    const token = await pushNotifications.getExpoPushToken();
-    console.log('Push token:', token);
-
-    // Send token to your backend
-    await api.registerPushToken(token);
-  }
+const status = await pushNotifications.requestPermissions();
+if (status === 'granted') {
+  const token = await pushNotifications.getExpoPushToken();
+  // Token sent to backend automatically by app-initialization
 }
 ```
 
-### Handle Notification Navigation
-
-Customize `notification-handler.ts` to handle your notification types:
+### Handle Navigation
 
 ```typescript
 // src/services/notifications/notification-handler.ts
-
 const NOTIFICATION_ROUTES: Record<string, string> = {
   'new_message': '/(tabs)/messages',
   'order_update': '/(tabs)/orders/[id]',
-  'profile_update': '/(tabs)/profile',
 };
 
-export function handleNotificationData(data: PushNotificationData): void {
-  if (data.type && NOTIFICATION_ROUTES[data.type]) {
-    const route = NOTIFICATION_ROUTES[data.type];
-    router.push({
-      pathname: route,
-      params: data.entityId ? { id: data.entityId } : undefined,
-    });
-  }
+export function handleNotificationData(data: PushNotificationData) {
+  const route = NOTIFICATION_ROUTES[data.type];
+  if (route) router.push({ pathname: route, params: { id: data.entityId } });
 }
 ```
 
-### Schedule Local Notifications
+### Schedule Local Notification
 
 ```typescript
-import { pushNotifications } from '@services/notifications';
-
-// Schedule for specific time
 await pushNotifications.scheduleNotification({
   title: 'Reminder',
-  body: 'Don\'t forget to check your tasks!',
-  trigger: new Date(Date.now() + 60 * 60 * 1000), // 1 hour from now
+  body: 'Check your tasks',
+  trigger: new Date(Date.now() + 3600000), // 1 hour
   data: { type: 'reminder' },
 });
-
-// Schedule after delay
-await pushNotifications.scheduleNotification({
-  title: 'Welcome!',
-  body: 'Thanks for signing up',
-  trigger: 5, // 5 seconds from now
-});
 ```
 
-### Send Push Notifications (Backend)
-
-Use Expo's push notification service:
+## Backend (Send Push)
 
 ```typescript
-// Backend example (Node.js)
-const { Expo } = require('expo-server-sdk');
+// Node.js with expo-server-sdk
+import { Expo } from 'expo-server-sdk';
 
 const expo = new Expo();
-
-const messages = [{
+await expo.sendPushNotificationsAsync([{
   to: 'ExponentPushToken[xxxxx]',
   title: 'New Message',
-  body: 'You have a new message from John',
-  data: {
-    type: 'new_message',
-    entityId: 'message-123',
-    url: '/(tabs)/messages/message-123',
-  },
-}];
-
-const chunks = expo.chunkPushNotifications(messages);
-for (const chunk of chunks) {
-  await expo.sendPushNotificationsAsync(chunk);
-}
+  body: 'From John',
+  data: { type: 'new_message', entityId: 'msg-123' },
+}]);
 ```
 
-## Notification Payload Structure
+## Payload Structure
 
 ```typescript
 interface PushNotificationData {
-  // Route to navigate to
-  type?: string;     // Maps to NOTIFICATION_ROUTES
-  url?: string;      // Direct deep link
-
-  // Entity context
-  entityId?: string; // ID for dynamic routes
-
-  // Custom data
-  [key: string]: unknown;
+  type?: string;      // Maps to NOTIFICATION_ROUTES
+  url?: string;       // Direct deep link
+  entityId?: string;  // For dynamic routes
 }
 ```
 
 ## Testing
 
-### Test on Physical Device
-
 ```bash
-# Build development client
+# Build dev client
 eas build --profile development-device --platform ios
 
-# Or Android
-eas build --profile development-device --platform android
+# Send test via Expo tool: https://expo.dev/notifications
 ```
 
-### Send Test Notification
-
-Use [Expo Push Notification Tool](https://expo.dev/notifications):
-1. Enter your ExpoPushToken
-2. Set title and body
-3. Add custom data JSON
-4. Send!
-
-### Simulate in Development
-
+Local test:
 ```typescript
-// Trigger local notification for testing
 await pushNotifications.scheduleNotification({
-  title: 'Test Notification',
-  body: 'This is a test',
+  title: 'Test',
+  body: 'Test notification',
   trigger: null, // Immediate
-  data: { type: 'test' },
 });
 ```
 
 ## Troubleshooting
 
-### "Push token is null"
+| Issue | Solution |
+|-------|----------|
+| Token is null | Use physical device, check permissions |
+| Not showing | Check notification channel (Android), DND mode |
+| Deep link fails | Verify URL scheme in app.config.ts |
 
-- Ensure you're on a physical device
-- Check that permissions are granted
-- Verify Firebase/APNs configuration
+## Key Files
 
-### Notifications not showing
-
-- Check notification channel (Android)
-- Verify app is not in Do Not Disturb
-- Check notification settings in device Settings
-
-### Deep link not working
-
-- Verify URL scheme in app.config.ts
-- Check NOTIFICATION_ROUTES mapping
-- Test deep link with `npx uri-scheme open`
-
-## Best Practices
-
-1. **Request permissions contextually**: Don't request on app launch; wait until relevant feature
-2. **Handle token refresh**: Tokens can change; listen for updates
-3. **Graceful degradation**: App should work without push permissions
-4. **Test both platforms**: iOS and Android have different behaviors
-5. **Monitor delivery**: Use Expo's notification receipts to track delivery
-
-## Resources
-
-- [expo-notifications docs](https://docs.expo.dev/versions/latest/sdk/notifications/)
-- [Expo Push Notifications](https://docs.expo.dev/push-notifications/overview/)
-- [Firebase Cloud Messaging](https://firebase.google.com/docs/cloud-messaging)
-- [Apple Push Notification Service](https://developer.apple.com/documentation/usernotifications)
+| File | Purpose |
+|------|---------|
+| `src/services/notifications/push-notifications.ts` | Permission + token handling |
+| `src/services/notifications/notification-handler.ts` | Foreground/background handlers |
+| `src/services/app-initialization.ts` | Auto-registers token with backend |

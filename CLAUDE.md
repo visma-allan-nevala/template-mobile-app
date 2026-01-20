@@ -1,190 +1,237 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+LLM reference for template-mobile-app. Optimized for fast context loading.
 
-## Quick Reference
+## Commands
 
 ```bash
-# Development
-make setup          # Initial setup (install deps, pre-commit)
-make dev            # Start Expo dev server
-make dev-web        # Web browser only
-
-# Quality
-make check          # Lint + typecheck
+make setup          # First-time setup
+make dev            # Start dev server
+make check          # Lint + typecheck (run before commits)
 make test           # Run tests
-make test-cov       # Tests with coverage
-npm test -- path/to/test.test.ts  # Single test file
-
-# Formatting
-make lint-fix       # Auto-fix lint issues
-make format         # Format with Prettier
-
-# EAS Build (requires eas-cli)
-eas build --profile development --platform ios
-eas build --profile staging --platform all
-eas build --profile production --platform all
+npm test -- path    # Single test file
+make lint-fix       # Auto-fix lint
 ```
 
-## Project Overview
+## File Lookup
 
-React Native + Expo template with production-ready architecture. Uses file-based routing (Expo Router), Zustand for state management, and TypeScript in strict mode. Includes Visma Connect OAuth integration.
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      app/ (Screens)                         │
-│              File-based routing via Expo Router             │
-├─────────────────────────────────────────────────────────────┤
-│                src/components/ (UI Layer)                   │
-│        Reusable components: Button, Input, Card, etc.       │
-├─────────────────────────────────────────────────────────────┤
-│                  src/hooks/ (React Hooks)                   │
-│          useAuth, useApi, useNetworkState, etc.             │
-├─────────────────────────────────────────────────────────────┤
-│                src/services/ (Business Logic)               │
-│     Orchestrates API calls + state updates                  │
-│     - auth/: Visma Connect OAuth + token management         │
-│     - analytics/: Analytics + crash reporting               │
-│     - notifications/: Push notification handling            │
-├─────────────────────────────────────────────────────────────┤
-│    src/api/ (API Client)    │    src/store/ (State)        │
-│    Fetch wrapper + endpoints │    Zustand stores            │
-├─────────────────────────────────────────────────────────────┤
-│                   src/core/ (Configuration)                 │
-│     config.ts, theme.ts, constants.ts, auth.config.ts       │
-├─────────────────────────────────────────────────────────────┤
-│                    src/utils/ (Utilities)                   │
-│      secure-storage, storage, formatting, validation        │
-└─────────────────────────────────────────────────────────────┘
-```
+| Need to find... | Look in... |
+|-----------------|------------|
+| Screen/page | `app/*.tsx`, `app/(tabs)/*.tsx`, `app/(auth)/*.tsx` |
+| UI component | `src/components/ui/*.tsx` |
+| Form component | `src/components/forms/*.tsx` |
+| React hook | `src/hooks/*.ts` |
+| API endpoint | `src/api/endpoints/*.ts` |
+| API types | `src/api/types.ts` |
+| Zustand store | `src/store/*.store.ts` |
+| Business logic | `src/services/*.ts` |
+| Auth/OAuth | `src/services/auth/*.ts` |
+| Analytics | `src/services/analytics/*.ts` |
+| Push notifications | `src/services/notifications/*.ts` |
+| Environment config | `src/core/config.ts` |
+| OAuth config | `src/core/auth.config.ts` |
+| Constants/routes | `src/core/constants.ts` |
+| Theme/colors | `src/core/theme.ts` |
+| Shared types | `src/core/types.ts` |
+| Secure storage | `src/utils/secure-storage.ts` |
+| Validation | `src/utils/validation.ts` |
+| Formatting | `src/utils/formatting.ts` |
+| Tests | `tests/unit/**/*.test.ts` |
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `app/_layout.tsx` | Root layout with providers |
-| `app/(tabs)/_layout.tsx` | Tab navigation config |
-| `app.config.ts` | Dynamic Expo config (replaces app.json) |
-| `eas.json` | EAS Build profiles (dev/staging/prod) |
-| `src/core/config.ts` | Runtime environment configuration |
-| `src/core/auth.config.ts` | Visma Connect OAuth settings |
-| `src/store/auth.store.ts` | Auth state with persistence |
-| `src/api/client.ts` | API client with auth headers |
-| `src/services/auth/visma-connect.ts` | OAuth flow implementation |
+| File | Purpose | Key Exports |
+|------|---------|-------------|
+| `app/_layout.tsx` | Root layout, app initialization | `RootLayout` |
+| `app.config.ts` | Expo config (replaces app.json) | config object |
+| `eas.json` | EAS Build profiles | dev/staging/prod profiles |
+| `src/core/config.ts` | Runtime config from env | `config`, `isDev` |
+| `src/core/auth.config.ts` | OAuth settings | `authConfig`, `getOAuthConfig`, `validateAuthConfig` |
+| `src/api/client.ts` | HTTP client with auth | `apiClient`, `ApiError` |
+| `src/store/auth.store.ts` | Auth state | `useAuthStore` |
+| `src/services/auth/visma-connect.ts` | OAuth PKCE flow | `vismaConnect`, `VismaConnectError` |
+| `src/services/auth/token-manager.ts` | Token lifecycle | `tokenManager`, `setOnTokenRefreshFailed` |
+| `src/services/app-initialization.ts` | Startup logic | `initializeApp`, `onUserLogin`, `onUserLogout` |
+| `src/hooks/useVismaConnect.ts` | OAuth hook | `useVismaConnect`, `parseVismaUser` |
 
 ## Path Aliases
 
 ```typescript
-import { Button } from '@components/ui/Button';  // src/components/ui/Button
-import { useAuth } from '@hooks/useAuth';        // src/hooks/useAuth
-import { config } from '@core/config';           // src/core/config
-import { authApi } from '@api/endpoints/auth';   // src/api/endpoints/auth
-import { useAuthStore } from '@store/auth.store'; // src/store/auth.store
-import { formatDate } from '@utils/formatting';  // src/utils/formatting
+@components  → src/components
+@hooks       → src/hooks
+@core        → src/core
+@api         → src/api
+@store       → src/store
+@services    → src/services
+@utils       → src/utils
+@/           → project root (for app/ imports)
+```
+
+## Architecture
+
+```
+app/                    → Screens (Expo Router file-based routing)
+src/components/         → UI components (stateless, no business logic)
+src/hooks/              → React hooks (combine store + service)
+src/services/           → Business logic (API + store orchestration)
+src/api/                → HTTP client + endpoint functions
+src/store/              → Zustand stores (state management)
+src/core/               → Config, types, constants
+src/utils/              → Pure utility functions
 ```
 
 ## Data Flow
 
 ```
-User Action → Screen → Hook → Service → API → Backend
-                              ↓
-                           Store ← Response
-                              ↓
-                    Re-render via Zustand selector
+Screen → Hook → Service → API → Backend
+                   ↓
+              Store.setState()
+                   ↓
+         Component re-renders via selector
 ```
 
-## Environment Configuration
+## Common Patterns
 
-Three environments: `development`, `staging`, `production`
+### Add API Endpoint
 
-Set `APP_ENV` to switch environments. Key variables (see `.env.example`):
-
-| Variable | Purpose |
-|----------|---------|
-| `APP_ENV` | Environment (development/staging/production) |
-| `API_BASE_URL` | Backend API URL |
-| `VISMA_CONNECT_CLIENT_ID` | OAuth client ID from developer.visma.com |
-| `APP_SCHEME` | Deep link scheme for OAuth callbacks |
-| `ENABLE_ANALYTICS` | Toggle analytics tracking |
-| `ENABLE_CRASH_REPORTING` | Toggle crash reporting |
-
-EAS builds inject env vars per profile (see `eas.json`).
-
-## Adding New Features
-
-### New Screen
-1. Create file in `app/` following Expo Router conventions
-2. Add to navigation in parent `_layout.tsx` if needed
-
-### New API Endpoint
-1. Add types to `src/api/types.ts`
-2. Add endpoint function to `src/api/endpoints/`
-3. Create service in `src/services/` if needed
-
-### New Store
-1. Create Zustand store in `src/store/`
-2. Add persistence middleware if data should persist
-3. Export from barrel `index.ts`
-
-## State Management Patterns
-
-### Zustand Store Pattern
 ```typescript
-// src/store/example.store.ts
+// 1. src/api/types.ts
+export interface CreateItemRequest { name: string; }
+export interface ItemResponse { id: string; name: string; }
+
+// 2. src/api/endpoints/items.ts
+import { apiClient } from '../client';
+import type { CreateItemRequest, ItemResponse } from '../types';
+
+export const itemsApi = {
+  create: (data: CreateItemRequest): Promise<ItemResponse> =>
+    apiClient.post<ItemResponse>('/items', data),
+  getById: (id: string): Promise<ItemResponse> =>
+    apiClient.get<ItemResponse>(`/items/${id}`),
+};
+
+// 3. src/api/endpoints/index.ts
+export { itemsApi } from './items';
+```
+
+### Add Zustand Store
+
+```typescript
+// src/store/items.store.ts
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-interface ExampleState {
+interface ItemsState {
   items: Item[];
-  addItem: (item: Item) => void;
+  setItems: (items: Item[]) => void;
 }
 
-export const useExampleStore = create<ExampleState>()(
+export const useItemsStore = create<ItemsState>()(
   persist(
     (set) => ({
       items: [],
-      addItem: (item) => set((state) => ({ items: [...state.items, item] })),
+      setItems: (items) => set({ items }),
     }),
-    {
-      name: 'example-storage',
-      storage: createJSONStorage(() => AsyncStorage),
-    }
+    { name: 'items-storage', storage: createJSONStorage(() => AsyncStorage) }
   )
 );
 ```
 
-### Service Pattern
-```typescript
-// src/services/example.service.ts
-import { exampleApi } from '@api/endpoints/example';
-import { useExampleStore } from '@store/example.store';
+### Add Service
 
-export const exampleService = {
+```typescript
+// src/services/items.service.ts
+import { itemsApi } from '@api/endpoints/items';
+import { useItemsStore } from '@store/items.store';
+
+export const itemsService = {
   fetchItems: async () => {
-    const store = useExampleStore.getState();
-    const items = await exampleApi.getItems();
-    store.setItems(items);
+    const items = await itemsApi.getAll();
+    useItemsStore.getState().setItems(items);
   },
 };
 ```
 
-## Testing
+### Add Screen
 
-Test files go in `tests/unit/` or `tests/integration/`.
+```typescript
+// app/(tabs)/items.tsx
+import { View } from 'react-native';
+import { Text } from '@components/ui/Text';
 
-```bash
-make test                           # Run all tests
-make test-cov                       # With coverage
-npm test -- --watch                 # Watch mode
-npm test -- tests/unit/auth.test.ts # Single file
+export default function ItemsScreen() {
+  return <View><Text>Items</Text></View>;
+}
+
+// Add to app/(tabs)/_layout.tsx if tab navigation needed
 ```
 
-## Important Notes
+### Protected API Call
 
-- **Strict TypeScript**: Enabled - fix all type errors
-- **Secure storage**: Use `secureStorage` (expo-secure-store) for tokens/secrets
-- **Run checks before committing**: `make check && make test`
-- **OAuth setup**: Register app at developer.visma.com, set `VISMA_CONNECT_CLIENT_ID`
+```typescript
+// API client auto-injects auth header and handles 401 refresh
+const data = await apiClient.get('/protected-endpoint');
+
+// Skip auth for public endpoints
+const data = await apiClient.post('/auth/login', credentials, { skipAuth: true });
+```
+
+### Visma Connect Login
+
+```typescript
+import { useVismaConnect } from '@hooks/useVismaConnect';
+
+function LoginScreen() {
+  const { login, logout, isLoading, error } = useVismaConnect();
+  return <Button onPress={login} disabled={isLoading}>Sign in</Button>;
+}
+```
+
+## Environment Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `APP_ENV` | Environment: development/staging/production |
+| `API_BASE_URL` | Backend API URL |
+| `VISMA_CONNECT_CLIENT_ID` | OAuth client ID |
+| `APP_SCHEME` | Deep link scheme |
+| `ENABLE_ANALYTICS` | Toggle analytics |
+| `ENABLE_CRASH_REPORTING` | Toggle crash reporting |
+
+## Backend API Contract
+
+Expected endpoints (implemented by template-python-api):
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/auth/login` | POST | Email/password login |
+| `/auth/register` | POST | User registration |
+| `/auth/refresh` | POST | Token refresh |
+| `/auth/logout` | POST | Logout (revoke tokens) |
+| `/auth/oauth/login` | POST | OAuth token exchange |
+| `/user/profile` | GET | Get current user |
+| `/user/update` | PATCH | Update profile |
+| `/user/push-token` | POST | Register push token |
+
+## Testing
+
+```bash
+make test                              # All tests
+npm test -- --testPathPattern=auth     # Tests matching "auth"
+npm test -- --watch                    # Watch mode
+```
+
+Test location: `tests/unit/{category}/{file}.test.ts`
+
+## Pre-commit Checks
+
+Runs automatically: ESLint, Prettier, TypeScript, detect-secrets
+
+## Important Rules
+
+- Use `secureStorage` for tokens (not AsyncStorage)
+- Run `make check` before commits
+- Use `npx expo install` for RN packages
+- Types colocated with code (not in separate types/ folder)
+- Services orchestrate API→Store, hooks consume stores
