@@ -1,0 +1,52 @@
+repos:
+  # Pre-commit hooks for general checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '\.md$'
+      - id: end-of-file-fixer
+        exclude: '\.md$'
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: check-merge-conflict
+
+  # Detect secrets
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: 'package-lock\.json$'
+
+  # ESLint
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint
+        entry: npm run lint
+        language: system
+        types: [javascript, jsx, ts, tsx]
+        pass_filenames: false
+
+  # Prettier
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier
+        entry: npm run format:check
+        language: system
+        types: [javascript, jsx, ts, tsx, json]
+        pass_filenames: false
+
+  # TypeScript type check
+  - repo: local
+    hooks:
+      - id: typecheck
+        name: typecheck
+        entry: npm run typecheck
+        language: system
+        types: [ts, tsx]
+        pass_filenames: false

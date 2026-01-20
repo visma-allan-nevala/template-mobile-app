@@ -1,0 +1,8 @@
+# Placeholder for custom fonts
+# Add your font files here (.ttf, .otf)
+#
+# Example usage in app/_layout.tsx:
+#   await Font.loadAsync({
+#     'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
+#     'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
+#   });

@@ -1,0 +1,49 @@
+version: 2
+updates:
+  # npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    groups:
+      expo:
+        patterns:
+          - "expo*"
+          - "@expo/*"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "react-native"
+          - "react-native-*"
+          - "@react-native/*"
+      testing:
+        patterns:
+          - "jest"
+          - "jest-*"
+          - "@testing-library/*"
+          - "@types/jest"
+      linting:
+        patterns:
+          - "eslint"
+          - "eslint-*"
+          - "prettier"
+          - "@typescript-eslint/*"
+      types:
+        patterns:
+          - "@types/*"
+    ignore:
+      # Ignore major version updates for core packages
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-native"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
