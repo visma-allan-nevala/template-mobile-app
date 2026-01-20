@@ -2,7 +2,7 @@
  * Error Boundary Component
  *
  * Catches React errors and displays fallback UI.
- * In production, integrate with crash reporting (Sentry, Bugsnag).
+ * Integrates with crash reporting for production error tracking.
  *
  * Usage:
  *   // Wrap in app/_layout.tsx:
@@ -10,25 +10,33 @@
  *     <Slot />
  *   </ErrorBoundary>
  *
+ *   // With custom fallback:
+ *   <ErrorBoundary fallback={<CustomErrorUI />}>
+ *     <App />
+ *   </ErrorBoundary>
+ *
  * LLM Instructions:
  * - Wrap root layout with this component
- * - Add crash reporting SDK calls in componentDidCatch
- * - Example Sentry integration:
- *   componentDidCatch(error, errorInfo) {
- *     Sentry.captureException(error, { extra: errorInfo });
- *   }
+ * - Crash reporting is automatically integrated when enabled
+ * - Use onError prop for custom error handling
  */
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { colors, spacing } from '@core/theme';
-import { isDev } from '@core/config';
+import { config, isDev } from '@core/config';
+import { crashReporting } from '@services/analytics';
 import { Button } from './ui/Button';
 import { Text } from './ui/Text';
 
 interface Props {
   children: ReactNode;
+  /** Custom fallback UI when error occurs */
   fallback?: ReactNode;
+  /** Custom error handler */
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  /** Whether to show error details (defaults to isDev) */
+  showDetails?: boolean;
 }
 
 interface State {
@@ -60,13 +68,26 @@ export class ErrorBoundary extends Component<Props, State> {
       console.error('Component stack:', errorInfo.componentStack);
     }
 
-    // TODO: Send to crash reporting service in production
-    // Example with Sentry:
-    // if (config.features.enableCrashReporting) {
-    //   Sentry.captureException(error, {
-    //     extra: { componentStack: errorInfo.componentStack },
-    //   });
-    // }
+    // Send to crash reporting service if enabled
+    if (config.features.enableCrashReporting) {
+      crashReporting.captureComponentError(error, errorInfo.componentStack || '');
+
+      // Add breadcrumb for context
+      crashReporting.addBreadcrumb({
+        message: 'React ErrorBoundary caught error',
+        category: 'error',
+        level: 'error',
+        data: {
+          errorName: error.name,
+          errorMessage: error.message,
+        },
+      });
+    }
+
+    // Call custom error handler if provided
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
   }
 
   handleReset = (): void => {
@@ -75,12 +96,25 @@ export class ErrorBoundary extends Component<Props, State> {
       error: null,
       errorInfo: null,
     });
+
+    // Track recovery attempt
+    if (config.features.enableCrashReporting) {
+      crashReporting.addBreadcrumb({
+        message: 'User attempted error recovery',
+        category: 'ui',
+        level: 'info',
+      });
+    }
   };
 
   render(): ReactNode {
-    if (this.state.hasError) {
-      if (this.props.fallback) {
-        return this.props.fallback;
+    const { hasError, error, errorInfo } = this.state;
+    const { children, fallback, showDetails = isDev } = this.props;
+
+    if (hasError) {
+      // Use custom fallback if provided
+      if (fallback) {
+        return fallback;
       }
 
       return (
@@ -93,15 +127,23 @@ export class ErrorBoundary extends Component<Props, State> {
               We apologize for the inconvenience. Please try again.
             </Text>
 
-            {isDev && this.state.error && (
+            {showDetails && error && (
               <ScrollView style={styles.errorBox}>
-                <Text variant="caption" style={styles.errorText}>
-                  {this.state.error.toString()}
+                <Text variant="caption" style={styles.errorTitle}>
+                  Error: {error.name}
                 </Text>
-                {this.state.errorInfo && (
-                  <Text variant="caption" style={styles.errorText}>
-                    {this.state.errorInfo.componentStack}
-                  </Text>
+                <Text variant="caption" style={styles.errorText}>
+                  {error.message}
+                </Text>
+                {errorInfo && (
+                  <>
+                    <Text variant="caption" style={[styles.errorTitle, styles.stackTitle] as never}>
+                      Component Stack:
+                    </Text>
+                    <Text variant="caption" style={styles.errorText}>
+                      {errorInfo.componentStack}
+                    </Text>
+                  </>
                 )}
               </ScrollView>
             )}
@@ -109,12 +151,18 @@ export class ErrorBoundary extends Component<Props, State> {
             <Button onPress={this.handleReset} style={styles.button}>
               Try Again
             </Button>
+
+            {!isDev && config.features.enableCrashReporting && (
+              <Text variant="caption" color="secondary" center style={styles.reportText}>
+                This error has been automatically reported.
+              </Text>
+            )}
           </View>
         </View>
       );
     }
 
-    return this.props.children;
+    return children;
   }
 }
 
@@ -145,11 +193,23 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: spacing.lg,
   },
+  errorTitle: {
+    fontWeight: '600',
+    color: colors.error,
+    marginBottom: spacing.xs,
+  },
+  stackTitle: {
+    marginTop: spacing.md,
+  },
   errorText: {
     fontFamily: 'monospace',
-    color: colors.error,
+    color: colors.gray[700],
+    fontSize: 12,
   },
   button: {
     minWidth: 150,
+  },
+  reportText: {
+    marginTop: spacing.md,
   },
 });

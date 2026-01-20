@@ -12,9 +12,12 @@
 export const STORAGE_KEYS = {
   AUTH_TOKEN: 'auth_token',
   REFRESH_TOKEN: 'refresh_token',
+  TOKEN_EXPIRY: 'token_expiry',
+  ID_TOKEN: 'id_token',
   USER_PREFERENCES: 'user_preferences',
   ONBOARDING_COMPLETE: 'onboarding_complete',
   THEME_MODE: 'theme_mode',
+  AUTH_STATE: 'auth_state', // For persisting PKCE state during OAuth flow
 } as const;
 
 // Route names for type-safe navigation

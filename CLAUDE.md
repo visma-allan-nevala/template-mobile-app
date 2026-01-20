@@ -1,4 +1,6 @@
-# CLAUDE.md - Template Mobile App
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Quick Reference
 
@@ -12,15 +14,21 @@ make dev-web        # Web browser only
 make check          # Lint + typecheck
 make test           # Run tests
 make test-cov       # Tests with coverage
+npm test -- path/to/test.test.ts  # Single test file
 
 # Formatting
 make lint-fix       # Auto-fix lint issues
 make format         # Format with Prettier
+
+# EAS Build (requires eas-cli)
+eas build --profile development --platform ios
+eas build --profile staging --platform all
+eas build --profile production --platform all
 ```
 
 ## Project Overview
 
-React Native + Expo template with production-ready architecture. Uses file-based routing (Expo Router), Zustand for state management, and TypeScript in strict mode.
+React Native + Expo template with production-ready architecture. Uses file-based routing (Expo Router), Zustand for state management, and TypeScript in strict mode. Includes Visma Connect OAuth integration.
 
 ## Architecture
 
@@ -37,12 +45,15 @@ React Native + Expo template with production-ready architecture. Uses file-based
 ├─────────────────────────────────────────────────────────────┤
 │                src/services/ (Business Logic)               │
 │     Orchestrates API calls + state updates                  │
+│     - auth/: Visma Connect OAuth + token management         │
+│     - analytics/: Analytics + crash reporting               │
+│     - notifications/: Push notification handling            │
 ├─────────────────────────────────────────────────────────────┤
 │    src/api/ (API Client)    │    src/store/ (State)        │
 │    Fetch wrapper + endpoints │    Zustand stores            │
 ├─────────────────────────────────────────────────────────────┤
 │                   src/core/ (Configuration)                 │
-│         config.ts, theme.ts, constants.ts, types.ts         │
+│     config.ts, theme.ts, constants.ts, auth.config.ts       │
 ├─────────────────────────────────────────────────────────────┤
 │                    src/utils/ (Utilities)                   │
 │      secure-storage, storage, formatting, validation        │
@@ -55,10 +66,13 @@ React Native + Expo template with production-ready architecture. Uses file-based
 |------|---------|
 | `app/_layout.tsx` | Root layout with providers |
 | `app/(tabs)/_layout.tsx` | Tab navigation config |
-| `src/core/config.ts` | Environment configuration |
-| `src/core/theme.ts` | Design tokens (colors, spacing) |
+| `app.config.ts` | Dynamic Expo config (replaces app.json) |
+| `eas.json` | EAS Build profiles (dev/staging/prod) |
+| `src/core/config.ts` | Runtime environment configuration |
+| `src/core/auth.config.ts` | Visma Connect OAuth settings |
 | `src/store/auth.store.ts` | Auth state with persistence |
 | `src/api/client.ts` | API client with auth headers |
+| `src/services/auth/visma-connect.ts` | OAuth flow implementation |
 
 ## Path Aliases
 
@@ -71,15 +85,38 @@ import { useAuthStore } from '@store/auth.store'; // src/store/auth.store
 import { formatDate } from '@utils/formatting';  // src/utils/formatting
 ```
 
+## Data Flow
+
+```
+User Action → Screen → Hook → Service → API → Backend
+                              ↓
+                           Store ← Response
+                              ↓
+                    Re-render via Zustand selector
+```
+
+## Environment Configuration
+
+Three environments: `development`, `staging`, `production`
+
+Set `APP_ENV` to switch environments. Key variables (see `.env.example`):
+
+| Variable | Purpose |
+|----------|---------|
+| `APP_ENV` | Environment (development/staging/production) |
+| `API_BASE_URL` | Backend API URL |
+| `VISMA_CONNECT_CLIENT_ID` | OAuth client ID from developer.visma.com |
+| `APP_SCHEME` | Deep link scheme for OAuth callbacks |
+| `ENABLE_ANALYTICS` | Toggle analytics tracking |
+| `ENABLE_CRASH_REPORTING` | Toggle crash reporting |
+
+EAS builds inject env vars per profile (see `eas.json`).
+
 ## Adding New Features
 
 ### New Screen
 1. Create file in `app/` following Expo Router conventions
 2. Add to navigation in parent `_layout.tsx` if needed
-
-### New Component
-1. Create in `src/components/ui/` or `src/components/forms/`
-2. Export from barrel `index.ts`
 
 ### New API Endpoint
 1. Add types to `src/api/types.ts`
@@ -90,16 +127,6 @@ import { formatDate } from '@utils/formatting';  // src/utils/formatting
 1. Create Zustand store in `src/store/`
 2. Add persistence middleware if data should persist
 3. Export from barrel `index.ts`
-
-## Data Flow
-
-```
-User Action → Screen → Hook → Service → API → Backend
-                              ↓
-                           Store ← Response
-                              ↓
-                    Re-render via Zustand selector
-```
 
 ## State Management Patterns
 
@@ -138,62 +165,26 @@ import { useExampleStore } from '@store/example.store';
 export const exampleService = {
   fetchItems: async () => {
     const store = useExampleStore.getState();
-    try {
-      const items = await exampleApi.getItems();
-      store.setItems(items);
-    } catch (error) {
-      // Handle error
-    }
+    const items = await exampleApi.getItems();
+    store.setItems(items);
   },
 };
 ```
 
 ## Testing
 
-```bash
-make test                    # Run all tests
-make test-cov               # With coverage
-npm test -- --watch         # Watch mode
-npm test -- path/to/test    # Specific file
-```
-
 Test files go in `tests/unit/` or `tests/integration/`.
 
-## Common Commands
-
 ```bash
-# Start development
-npx expo start
-
-# Run on specific platform
-npx expo start --ios
-npx expo start --android
-npx expo start --web
-
-# Clear cache
-npx expo start --clear
-
-# Install new package
-npx expo install <package-name>
+make test                           # Run all tests
+make test-cov                       # With coverage
+npm test -- --watch                 # Watch mode
+npm test -- tests/unit/auth.test.ts # Single file
 ```
-
-## Environment Variables
-
-Copy `.env.example` to `.env` and configure:
-- `API_BASE_URL`: Backend API URL
-- `API_TIMEOUT`: Request timeout in ms
-
-## Pre-commit Hooks
-
-Configured in `.pre-commit-config.yaml`:
-- ESLint
-- Prettier
-- detect-secrets
-- Trailing whitespace removal
 
 ## Important Notes
 
 - **Strict TypeScript**: Enabled - fix all type errors
-- **No console.log in production**: Use `console.warn/error` only
-- **Secure storage**: Use `secureStorage` for tokens/secrets
-- **Test your changes**: Run `make check && make test` before committing
+- **Secure storage**: Use `secureStorage` (expo-secure-store) for tokens/secrets
+- **Run checks before committing**: `make check && make test`
+- **OAuth setup**: Register app at developer.visma.com, set `VISMA_CONNECT_CLIENT_ID`
